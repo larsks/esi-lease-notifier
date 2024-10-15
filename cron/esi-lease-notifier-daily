@@ -1,0 +1,7 @@
+#!/bin/sh
+
+exec esi-lease-notifier \
+  --template-directory /config/templates-daily \
+  --config-file /config/esi-lease-notifier.yaml \
+  -v \
+  ${ESI_LEASE_NOTIFIER_EXTRA_ARGS}

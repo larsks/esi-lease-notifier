@@ -1,0 +1,8 @@
+#!/bin/sh
+
+exec esi-lease-notifier \
+  --template-directory /config/templates-expiring \
+  --config-file /config/esi-lease-notifier.yaml \
+  --filter expiring=4 \
+  -v \
+  ${ESI_LEASE_NOTIFIER_EXTRA_ARGS}

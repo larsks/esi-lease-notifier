@@ -1,0 +1,9 @@
+esi-lease-notifier:
+  email:
+    smtp_server: XXXXXXXXXXXXXXXXXXXXXXX
+    smtp_port: 25
+    smtp_tls: true
+    smtp_starttls: True"
+    smtp_username: XXXXXXXXXXXXXXXXXXXXXXXXX
+    smtp_password: XXXXXXXXXXXXXXXXXXXXXXXXX
+    smtp_from: esi@massopen.cloud

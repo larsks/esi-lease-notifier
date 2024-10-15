@@ -1,0 +1,7 @@
+python-openstackclient
+esisdk
+jinja2
+click
+pyyaml
+pydantic
+prettytable

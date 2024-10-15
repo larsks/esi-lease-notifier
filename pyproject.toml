@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "esi-lease-notifier"
+description = "Sent out email notifications for ESI leases"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Apache"}
+dynamic = ["version"]
+dependencies=[
+  "python-openstackclient",
+  "esisdk",
+  "jinja2",
+  "click",
+  "pyyaml",
+  "pydantic",
+  "prettytable",
+]
+
+[project.scripts]
+esi-lease-notifier = "esi_lease_notifier.cli:main"
+
+[tool.setuptools]
+packages = [
+  "esi_lease_notifier"
+]
