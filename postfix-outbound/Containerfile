@@ -1,0 +1,6 @@
+FROM docker.io/alpine:latest
+
+RUN apk add postfix curl bash nmap-ncat
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["bash", "/entrypoint.sh"]
+CMD ["postfix", "start-fg"]

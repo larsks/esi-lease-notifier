@@ -7,6 +7,6 @@ COPY requirements.txt ./
 RUN python3 -m venv --system-site-packages .venv
 RUN . .venv/bin/activate && pip install -r requirements.txt
 COPY . ./
-RUN . .venv/bin/activate && pip install .
+RUN . .venv/bin/activate && pip install -e .
 
 CMD ["crond", "-f", "-L", "/dev/stderr"]

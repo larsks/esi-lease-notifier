@@ -1,22 +1,41 @@
 import datetime
+import esi
 import logging
 
-from typing import Generator
+from typing import Protocol
 
-from esi.connection import ESIConnection
-from esi.lease.v1.lease import Lease
 from functools import cached_property, cache
+from esi.lease.v1.lease import Lease
 from openstack.identity.v3.project import Project
 from openstack.identity.v3.role_assignment import RoleAssignment
 from openstack.identity.v3.user import User
 from itertools import groupby
 
+from .models import OpenstackConfiguration
+
 LOG = logging.getLogger(__name__)
 
 
+class NotifierApiProtocol(Protocol):
+    def get_project_emails(self, project_id: str) -> list[str]: ...
+
+    @property
+    def projects(self) -> dict[str, Project]: ...
+
+    @property
+    def role_assignments(self) -> list[RoleAssignment]: ...
+
+    @property
+    def users(self) -> list[User]: ...
+
+    @property
+    def leases(self) -> list[Lease]: ...
+
+
 class NotifierApi:
-    def __init__(self, conn: ESIConnection):
-        self.conn = conn
+    def __init__(self, config: OpenstackConfiguration):
+        self.config = config
+        self.conn = esi.connect(cloud=config.cloud)
 
     @cache
     def get_project_emails(self, project_id: str) -> list[str]:
@@ -48,27 +67,6 @@ class NotifierApi:
         LOG.info("getting users")
         return list(self.conn.identity.users())
 
-    @cache
-    def _get_leases(self, filterspec: tuple[str] | None = None) -> list[Lease]:
-        filter: dict[str, str] = (
-            dict(x.split("=", 1) for x in filterspec) if filterspec else {}
-        )
-        leases = self.conn.lease.leases()
-        if expiring := filter.get("expiring"):
-            return [
-                lease
-                for lease in leases
-                if datetime.datetime.strptime(lease.end_time[:19], "%Y-%m-%dT%H:%M:%S")
-                < datetime.datetime.now() + datetime.timedelta(days=int(expiring))
-            ]
-
-        return list(leases)
-
-    def get_leases(
-        self, filterspec: tuple[str] | None = None
-    ) -> Generator[Lease, None, None]:
-        LOG.info("getting leases")
-        return groupby(
-            sorted(self._get_leases(filterspec), key=lambda lease: lease.project_id),
-            key=lambda lease: lease.project_id,
-        )
+    @cached_property
+    def leases(self) -> list[Lease]:
+        return list(self.conn.lease.leases())
