@@ -5,7 +5,6 @@ import logging
 
 from functools import cache
 
-from .models import OpenstackConfiguration
 from .models import User
 from .models import Project
 from .models import Lease
@@ -22,8 +21,8 @@ class IdpProtocol(Protocol):
 
 
 class OpenstackIdp:
-    def __init__(self, config: OpenstackConfiguration | None = None):
-        self.conn = esi.connect(cloud=config.cloud if config else None)
+    def __init__(self, cloud: str | None = None):
+        self.conn = esi.connect(cloud=cloud)
 
     @cache
     def get_users(self) -> list[User]:

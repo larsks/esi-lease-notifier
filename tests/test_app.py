@@ -147,8 +147,19 @@ def test_app(app: NotifierApp, mailer: DummyMailer):
     assert mailer.record[1]["to"] == "bob@example.com"
 
 
-def test_project_filter(app: NotifierApp, mailer: DummyMailer):
+def test_project_filter_by_id(app: NotifierApp, mailer: DummyMailer):
     app.config.filters.append(ProjectFilter(project="1"))  # pyright: ignore[reportCallIssue]
+    app.process_leases()
+
+    assert len(mailer.record) == 1
+    assert set(mailer.record[0]["to"].split(",")) == {
+        "alice@example.com",
+        "bob@example.com",
+    }
+
+
+def test_project_filter_by_name(app: NotifierApp, mailer: DummyMailer):
+    app.config.filters.append(ProjectFilter(project="project1"))  # pyright: ignore[reportCallIssue]
     app.process_leases()
 
     assert len(mailer.record) == 1

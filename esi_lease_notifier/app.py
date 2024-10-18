@@ -3,8 +3,6 @@ import logging
 from functools import cache, cached_property
 from itertools import groupby
 from pathlib import Path
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
 from .idp import IdpProtocol
 from .idp import OpenstackIdp
@@ -28,8 +26,19 @@ class NotifierApp:
         idp: IdpProtocol | None = None,
         mailer: MailerProtocol | None = None,
     ):
-        self.idp = idp if idp else OpenstackIdp(config.openstack)
-        self.mailer = mailer if mailer else SmtpMailer(config.email)
+        self.idp = idp if idp else OpenstackIdp(config.openstack.cloud)
+        self.mailer = (
+            mailer
+            if mailer
+            else SmtpMailer(
+                smtp_from=config.email.smtp_from,
+                smtp_server=config.email.smtp_server,
+                smtp_port=config.email.smtp_port,
+                smtp_tls=config.email.smtp_tls,
+                smtp_username=config.email.smtp_username,
+                smtp_password=config.email.smtp_password,
+            )
+        )
         self.config = config
         self.env = create_template_environment(
             template_path
@@ -110,11 +119,12 @@ class NotifierApp:
         self.resolve_filters()
 
         for project_id, leases in self.leases_by_project.items():
-            if not leases:
-                continue
-
             project = self.projects_by_id[project_id]
             recipients = self.get_project_emails(project.id)
+
+            if not leases:
+                LOG.info("no leases for project %s", project.name)
+                continue
 
             if not recipients:
                 LOG.warning(

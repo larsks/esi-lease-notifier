@@ -4,6 +4,7 @@ import logging
 import yaml
 
 from typing import get_args
+from email.mime.multipart import MIMEMultipart
 
 from .models import ConfigurationFile
 from .models import ProjectFilter
@@ -16,6 +17,11 @@ DEFAULT_CONFIG_FILE = "esi-lease-notifier.yaml"
 AVAILABLE_FILTERS = [ProjectFilter, ExpiresFilter]
 
 
+class NullMailer:
+    def send_message(self, msg: MIMEMultipart):  # pyright: ignore[reportUnusedParameter]
+        pass
+
+
 @click.command()
 @click.option("--template-path", "-t", default="templates")
 @click.option(
@@ -23,18 +29,24 @@ AVAILABLE_FILTERS = [ProjectFilter, ExpiresFilter]
 )
 @click.option("--verbosity", "-v", count=True)
 @click.option("--filter", "-f", "filters", multiple=True)
+@click.option("--dryrun", "-n", is_flag=True, default=False, type=bool)
 def main(
     template_path: str,
     config_file: io.IOBase,
     filters: list[str],
     verbosity: int = 0,
+    dryrun: bool = False,
 ):
     logLevel = LOGLEVELS[min(verbosity, len(LOGLEVELS))]
     logging.basicConfig(level=logLevel)
     with config_file:
         config = ConfigurationFile.model_validate(yaml.safe_load(config_file))
 
-    app = NotifierApp(config.esi_lease_notifier, template_path=template_path)
+    app = NotifierApp(
+        config.esi_lease_notifier,
+        template_path=template_path,
+        mailer=NullMailer() if dryrun else None,
+    )
 
     for filterspec in filters:
         kind, paramspec = filterspec.split("=")
