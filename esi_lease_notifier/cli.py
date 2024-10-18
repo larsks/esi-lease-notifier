@@ -17,7 +17,7 @@ AVAILABLE_FILTERS = [ProjectFilter, ExpiresFilter]
 
 
 @click.command()
-@click.option("--template-path", "-p", default="templates")
+@click.option("--template-path", "-t", default="templates")
 @click.option(
     "--config-file", "--config", "-c", default=DEFAULT_CONFIG_FILE, type=click.File()
 )
