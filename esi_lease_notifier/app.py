@@ -14,6 +14,7 @@ from .models import LeaseNotifierConfiguration
 from .models import Project
 from .models import User
 from .models import Lease
+from .models import Message
 from .templates import create_template_environment
 
 LOG = logging.getLogger(__name__)
@@ -132,7 +133,7 @@ class NotifierApp:
                 for lease in leases
             ]
             LOG.info(
-                "send email to %s for project %s with %d leases",
+                "message to %s for project %s with %d leases",
                 ",".join(recipients),
                 project.name,
                 len(leases),
@@ -142,33 +143,16 @@ class NotifierApp:
             body_html = body_template_html.render(project=project, leases=leasetable)
             body_text = body_template_text.render(project=project, leases=leasetable)
 
-            self.mailer.send_message(
-                self.build_message(
-                    self.config.email.smtp_from,
-                    recipients,
-                    subject,
-                    body_html,
-                    body_text,
-                )
+            message = Message(
+                msg_from=self.config.email.smtp_from,
+                recipients=recipients,
+                subject=subject,
+                body_html=body_html,
+                body_text=body_text,
             )
-
-    def build_message(
-        self,
-        msg_from: str,
-        msg_recipients: list[str],
-        msg_subject: str,
-        body_html: str,
-        body_text: str,
-    ):
-        msg = MIMEMultipart("alternative")
-        msg.attach(MIMEText(body_text, "plain"))
-        msg.attach(MIMEText(body_html, "html"))
-        msg["From"] = msg_from
-        msg["To"] = ",".join(msg_recipients)
-        msg["Subject"] = msg_subject
-
-        return msg
+            self.mailer.send_message(message.as_mime_multipart())
 
     def resolve_filters(self):
+        """Transform project name references in filters into project ids."""
         for filter in self.config.filters:
             filter.resolve(self)

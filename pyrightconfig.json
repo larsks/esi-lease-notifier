@@ -1,4 +1,5 @@
 {
   "reportUnnecessaryIsInstance": false,
-  "reportUnreachable": false
+  "reportUnreachable": false,
+  "reportUnusedCallResult": false,
 }

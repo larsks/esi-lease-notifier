@@ -28,7 +28,10 @@ class SmtpMailer:
         with self.smtpclass(self.config.smtp_server, self.config.smtp_port) as mailer:
             if self.config.smtp_tls == EmailTLSOption.EMAIL_TLS_STARTTLS:
                 mailer.starttls()
-            if self.config.smtp_username:
-                mailer.login(config.smtp_username, config.smtp_password)
+            if (
+                self.config.smtp_username is not None
+                and self.config.smtp_password is not None
+            ):
+                mailer.login(self.config.smtp_username, self.config.smtp_password)
 
             mailer.send_message(msg)

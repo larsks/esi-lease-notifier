@@ -4,11 +4,13 @@ import datetime
 
 from enum import StrEnum
 from enum import IntEnum
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from pydantic import Field
 from pydantic import model_validator
 from pydantic import BeforeValidator
 from pydantic import ConfigDict
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 def maybeDateTime(v: str | datetime.datetime) -> datetime.datetime:
@@ -149,3 +151,33 @@ class ConfigurationFile(BaseModel):
     esi_lease_notifier: LeaseNotifierConfiguration = Field(
         ..., alias="esi-lease-notifier"
     )
+
+
+class Message(BaseModel):
+    msg_from: str
+    recipients: list[str]
+    subject: str
+    body_html: str
+    body_text: str
+
+    @field_validator("recipients")
+    @classmethod
+    def validate_recipients(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("messages must have at least one recipient")
+
+        return v
+
+    def as_mime_multipart(self) -> MIMEMultipart:
+        msg = MIMEMultipart("alternative")
+        msg.attach(MIMEText(self.body_text, "plain"))
+        msg.attach(MIMEText(self.body_html, "html"))
+        msg["From"] = self.msg_from
+        msg["To"] = self.msg_to
+        msg["Subject"] = self.subject
+
+        return msg
+
+    @property
+    def msg_to(self) -> str:
+        return ",".join(self.recipients)
