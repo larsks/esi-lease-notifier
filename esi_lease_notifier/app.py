@@ -114,6 +114,15 @@ class NotifierApp:
 
             project = self.projects_by_id[project_id]
             recipients = self.get_project_emails(project.id)
+
+            if not recipients:
+                LOG.warning(
+                    "%d leases for project %s but no recipients",
+                    len(leases),
+                    project.name,
+                )
+                continue
+
             leasetable = [
                 (
                     lease.resource_name,
@@ -123,7 +132,10 @@ class NotifierApp:
                 for lease in leases
             ]
             LOG.info(
-                "send email to %s in project %s", ",".join(recipients), project.name
+                "send email to %s for project %s with %d leases",
+                ",".join(recipients),
+                project.name,
+                len(leases),
             )
 
             subject = subject_template.render(project=project, leases=leasetable)
