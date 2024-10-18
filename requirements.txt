@@ -1,7 +1,7 @@
 python-openstackclient
 esisdk
 jinja2
-click
+click>=8.0
 pyyaml
 pydantic
 prettytable

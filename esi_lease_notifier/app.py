@@ -71,7 +71,7 @@ class NotifierApp:
         }
 
     @cached_property
-    def users_by_project(self) -> dict[str, list[User]]:
+    def users_by_project(self) -> dict[str, set[User]]:
         return {
             project: set(
                 self.users_by_id[assignment.user.id] for assignment in assignments
@@ -79,9 +79,9 @@ class NotifierApp:
             for project, assignments in groupby(
                 sorted(
                     [ra for ra in self.idp.get_role_assignments() if ra.scope.project],
-                    key=lambda ra: ra.scope.project.id,
+                    key=lambda ra: ra.scope.project.id,  # pyright: ignore[reportOptionalMemberAccess]
                 ),
-                key=lambda ra: ra.scope.project.id,
+                key=lambda ra: ra.scope.project.id,  # pyright: ignore[reportOptionalMemberAccess]
             )
         }
 
@@ -105,6 +105,8 @@ class NotifierApp:
         subject_template = self.env.get_template("subject.txt")
         body_template_html = self.env.get_template("body.html")
         body_template_text = self.env.get_template("body.txt")
+
+        self.resolve_filters()
 
         for project_id, leases in self.leases_by_project.items():
             if not leases:
@@ -139,7 +141,12 @@ class NotifierApp:
             )
 
     def build_message(
-        self, msg_from, msg_recipients, msg_subject, body_html, body_text
+        self,
+        msg_from: str,
+        msg_recipients: list[str],
+        msg_subject: str,
+        body_html: str,
+        body_text: str,
     ):
         msg = MIMEMultipart("alternative")
         msg.attach(MIMEText(body_text, "plain"))
@@ -149,3 +156,7 @@ class NotifierApp:
         msg["Subject"] = msg_subject
 
         return msg
+
+    def resolve_filters(self):
+        for filter in self.config.filters:
+            filter.resolve(self)

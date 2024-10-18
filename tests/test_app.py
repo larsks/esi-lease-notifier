@@ -1,8 +1,11 @@
 import pytest
+import datetime
 
 from email.mime.multipart import MIMEMultipart
 
 from esi_lease_notifier.app import NotifierApp
+from esi_lease_notifier.idp import IdpProtocol
+from esi_lease_notifier.mailer import MailerProtocol
 from esi_lease_notifier.models import (
     EmailConfiguration,
     LeaseNotifierConfiguration,
@@ -14,10 +17,15 @@ from esi_lease_notifier.models import Lease
 from esi_lease_notifier.models import RoleAssignment
 from esi_lease_notifier.models import IdReference
 from esi_lease_notifier.models import Scope
+from esi_lease_notifier.models import ProjectFilter
+from esi_lease_notifier.models import ExpiresFilter
 
 
 class DummyMailer:
-    record: list[MIMEMultipart] = []
+    record: list[MIMEMultipart]
+
+    def __init__(self):
+        self.record = []
 
     def send_message(self, msg: MIMEMultipart) -> None:
         self.record.append(msg)
@@ -43,19 +51,17 @@ class DummyIdp:
                 id="1",
                 resource_name="test_resource",
                 resource_class="test_class",
-                project="example",
                 project_id="1",
-                start_time="2024-10-01T10:00",
-                end_time="2024-10-30T10:00",
+                start_time=datetime.datetime.now(),
+                end_time=datetime.datetime.now() + datetime.timedelta(days=8),
             ),
             Lease(
                 id="2",
                 resource_name="test_resource",
                 resource_class="test_class",
-                project="example",
                 project_id="2",
-                start_time="2024-10-01T10:00",
-                end_time="2024-10-30T10:00",
+                start_time=datetime.datetime.now(),
+                end_time=datetime.datetime.now() + datetime.timedelta(days=2),
             ),
         ]
 
@@ -103,11 +109,11 @@ def mailer():
 
 
 @pytest.fixture
-def app(config, idp, mailer):
+def app(config: LeaseNotifierConfiguration, idp: IdpProtocol, mailer: MailerProtocol):
     return NotifierApp(config, idp=idp, mailer=mailer)
 
 
-def test_app_mailer(app, mailer):
+def test_app(app: NotifierApp, mailer: DummyMailer):
     app.process_leases()
 
     assert len(mailer.record) == 2
@@ -116,3 +122,22 @@ def test_app_mailer(app, mailer):
         "bob@example.com",
     }
     assert mailer.record[1]["to"] == "bob@example.com"
+
+
+def test_project_filter(app: NotifierApp, mailer: DummyMailer):
+    app.config.filters.append(ProjectFilter(project="1"))  # pyright: ignore[reportCallIssue]
+    app.process_leases()
+
+    assert len(mailer.record) == 1
+    assert set(mailer.record[0]["to"].split(",")) == {
+        "alice@example.com",
+        "bob@example.com",
+    }
+
+
+def test_expires_filter(app: NotifierApp, mailer: DummyMailer):
+    app.config.filters.append(ExpiresFilter(daysleft=4))
+    app.process_leases()
+
+    assert len(mailer.record) == 1
+    assert mailer.record[0]["to"] == "bob@example.com"
