@@ -32,8 +32,3 @@ class SmtpMailer:
                 mailer.login(config.smtp_username, config.smtp_password)
 
             mailer.send_message(msg)
-
-
-class DummyMailer:
-    def send_message(self, msg: MIMEMultipart) -> None:
-        pass

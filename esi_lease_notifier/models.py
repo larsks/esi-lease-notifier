@@ -117,29 +117,28 @@ class Project(BaseModel):
 
 
 class Lease(BaseModel):
+    id: str
     resource_name: str
-    resource_uuid: str
     resource_class: str
-    owner: str
-    owner_id: str
+    owner: str | None = None
+    owner_id: str | None = None
     project: str
     project_id: str
     start_time: isoDateTime
     end_time: isoDateTime
     expire_time: isoDateTime | None = None
-    status: LeaseStatus
-    id: str
+    status: LeaseStatus = LeaseStatus.ACTIVE
 
 
-class idReference(BaseModel):
+class IdReference(BaseModel):
     id: str
 
 
 class Scope(BaseModel):
-    project: idReference | None = None
+    project: IdReference | None = None
 
 
 class RoleAssignment(BaseModel):
-    role: idReference
+    role: IdReference
     scope: Scope
-    user: idReference
+    user: IdReference
