@@ -1,0 +1,7 @@
+You are receiving this reminder email because you have leased nodes in
+MOC ESI. If you have any unused nodes, please cancel those leases.
+
+{{leases | tabulate(headings=["NODE", "LEASE START TIME", "LEASE_ END TIME"])}}
+
+If you would like to stop receiving these emails you will need to delete your
+account by contacting <support@massopen.cloud>.
