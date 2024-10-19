@@ -19,79 +19,13 @@ from esi_lease_notifier.models import Scope
 from esi_lease_notifier.models import ProjectFilter
 from esi_lease_notifier.models import ExpiresFilter
 
-
-class DummyMailer:
-    record: list[MIMEMultipart]
-
-    def __init__(self):
-        self.record = []
-
-    def send_message(self, msg: MIMEMultipart) -> None:
-        self.record.append(msg)
-
-
-class DummyIdp:
-    def get_users(self) -> list[User]:
-        return [
-            User(id="1", name="alice", email="alice@example.com"),
-            User(id="2", name="bob", email="bob@example.com"),
-            User(id="3", name="carol"),
-        ]
-
-    def get_projects(self) -> list[Project]:
-        return [
-            Project(id="1", name="project1"),
-            Project(id="2", name="project2"),
-        ]
-
-    def get_leases(self) -> list[Lease]:
-        return [
-            Lease(
-                id="1",
-                resource_name="test_resource",
-                resource_class="test_class",
-                project_id="1",
-                start_time=datetime.datetime.now(),
-                end_time=datetime.datetime.now() + datetime.timedelta(days=8),
-            ),
-            Lease(
-                id="2",
-                resource_name="test_resource",
-                resource_class="test_class",
-                project_id="2",
-                start_time=datetime.datetime.now(),
-                end_time=datetime.datetime.now() + datetime.timedelta(days=2),
-            ),
-        ]
-
-    def get_role_assignments(self) -> list[RoleAssignment]:
-        return [
-            RoleAssignment(
-                role=IdReference(id="1"),
-                scope=Scope(project=IdReference(id="1")),
-                user=IdReference(id="1"),
-            ),
-            RoleAssignment(
-                role=IdReference(id="1"),
-                scope=Scope(project=IdReference(id="1")),
-                user=IdReference(id="2"),
-            ),
-            RoleAssignment(
-                role=IdReference(id="1"),
-                scope=Scope(project=IdReference(id="2")),
-                user=IdReference(id="2"),
-            ),
-            RoleAssignment(
-                role=IdReference(id="1"),
-                scope=Scope(project=IdReference(id="2")),
-                user=IdReference(id="3"),
-            ),
-        ]
+from tests.fakes import FakeIdp
+from tests.fakes import FakeMailer
 
 
 @pytest.fixture
 def idp():
-    return DummyIdp()
+    return FakeIdp()
 
 
 @pytest.fixture
@@ -104,7 +38,7 @@ def config():
 
 @pytest.fixture
 def mailer():
-    return DummyMailer()
+    return FakeMailer()
 
 
 @pytest.fixture
@@ -117,7 +51,7 @@ def app(
     return NotifierApp(config, template_path=templates, idp=idp, mailer=mailer)
 
 
-def test_app(app: NotifierApp, mailer: DummyMailer):
+def test_app(app: NotifierApp, mailer: MailerProtocol):
     app.process_leases()
 
     assert len(mailer.record) == 2
@@ -128,7 +62,7 @@ def test_app(app: NotifierApp, mailer: DummyMailer):
     assert mailer.record[1]["to"] == "bob@example.com"
 
 
-def test_project_filter_by_id(app: NotifierApp, mailer: DummyMailer):
+def test_project_filter_by_id(app: NotifierApp, mailer: MailerProtocol):
     app.config.filters.append(ProjectFilter(project="1"))  # pyright: ignore[reportCallIssue]
     app.process_leases()
 
@@ -139,7 +73,7 @@ def test_project_filter_by_id(app: NotifierApp, mailer: DummyMailer):
     }
 
 
-def test_project_filter_by_name(app: NotifierApp, mailer: DummyMailer):
+def test_project_filter_by_name(app: NotifierApp, mailer: MailerProtocol):
     app.config.filters.append(ProjectFilter(project="project1"))  # pyright: ignore[reportCallIssue]
     app.process_leases()
 
@@ -150,7 +84,7 @@ def test_project_filter_by_name(app: NotifierApp, mailer: DummyMailer):
     }
 
 
-def test_expires_filter(app: NotifierApp, mailer: DummyMailer):
+def test_expires_filter(app: NotifierApp, mailer: MailerProtocol):
     app.config.filters.append(ExpiresFilter(daysleft=4))
     app.process_leases()
 

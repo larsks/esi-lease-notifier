@@ -2,9 +2,13 @@ import click
 import io
 import logging
 import yaml
+import importlib
 
 from typing import get_args
 from email.mime.multipart import MIMEMultipart
+
+from esi_lease_notifier.idp import IdpProtocol
+from esi_lease_notifier.mailer import MailerProtocol
 
 from .models import ConfigurationFile
 from .models import ProjectFilter
@@ -20,6 +24,12 @@ AVAILABLE_FILTERS = [ProjectFilter, ExpiresFilter]
 class NullMailer:
     def send_message(self, msg: MIMEMultipart):  # pyright: ignore[reportUnusedParameter]
         pass
+
+
+def load_class(qname: str):
+    modulename, classname = qname.rsplit(".", 1)
+    module = importlib.import_module(modulename)
+    return getattr(module, classname)
 
 
 @click.command()
@@ -40,12 +50,26 @@ def main(
     logLevel = LOGLEVELS[min(verbosity, len(LOGLEVELS))]
     logging.basicConfig(level=logLevel)
     with config_file:
-        config = ConfigurationFile.model_validate(yaml.safe_load(config_file))
+        config = ConfigurationFile.model_validate(
+            yaml.safe_load(config_file)
+        ).esi_lease_notifier
+
+    mailer: MailerProtocol | None = None
+    idp: IdpProtocol | None = None
+
+    if config.mailer:
+        mailer = load_class(config.mailer)()
+    elif dryrun:
+        mailer = NullMailer()
+
+    if config.idp:
+        idp = load_class(config.idp)()
 
     app = NotifierApp(
-        config.esi_lease_notifier,
+        config,
         template_path=template_path,
-        mailer=NullMailer() if dryrun else None,
+        mailer=mailer,
+        idp=idp,
     )
 
     for filterspec in filters:
@@ -59,6 +83,6 @@ def main(
         else:
             raise KeyError(f"unknown filter kind: {kind}")
 
-        config.esi_lease_notifier.filters.append(filter)
+        config.filters.append(filter)
 
     app.process_leases()

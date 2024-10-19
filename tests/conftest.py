@@ -21,6 +21,8 @@ def smtp_sink_unix(tempdir: Path):
     p = subprocess.Popen(
         [
             "smtp-sink",
+            "-S",
+            "---MESSAGE---\n",
             "-D",
             f"{dumppath}",
             f"unix:{socketpath}",
@@ -42,6 +44,8 @@ def smtp_sink_tcp(tempdir: Path):
     p = subprocess.Popen(
         [
             "smtp-sink",
+            "-S",
+            "---MESSAGE---\n",
             "-D",
             f"{dumppath}",
             f"localhost:{port}",

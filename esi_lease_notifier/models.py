@@ -156,6 +156,8 @@ class LeaseNotifierConfiguration(BaseModel):
     openstack: OpenstackConfiguration | None = None
     filters: list[ProjectFilter | ExpiresFilter] = []
     template_path: str | None = None
+    idp: str | None = None
+    mailer: str | None = None
 
 
 class ConfigurationFile(BaseModel):
