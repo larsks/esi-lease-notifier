@@ -49,8 +49,6 @@ class Project(BaseModel):
 class Lease(BaseModel):
     id: str
     resource_name: str
-    resource_class: str
-    owner_id: str | None = None
     project_id: str
     start_time: isoDateTime
     end_time: isoDateTime
