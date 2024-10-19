@@ -108,30 +108,13 @@ def mailer():
 
 
 @pytest.fixture
-def template_path(tempdir: Path):
-    tp = tempdir / "templates"
-    tp.mkdir()
-
-    with (tp / "subject.txt").open("w") as fd:
-        fd.write("Test email about {{ project.name }}")
-
-    with (tp / "body.txt").open("w") as fd:
-        fd.write("{{ leases|tabulate }}")
-
-    with (tp / "body.html").open("w") as fd:
-        fd.write("{{ leases|tabulate(html=True) }}")
-
-    return tp
-
-
-@pytest.fixture
 def app(
-    template_path: str,
+    templates: str,
     config: LeaseNotifierConfiguration,
     idp: IdpProtocol,
     mailer: MailerProtocol,
 ):
-    return NotifierApp(config, template_path=template_path, idp=idp, mailer=mailer)
+    return NotifierApp(config, template_path=templates, idp=idp, mailer=mailer)
 
 
 def test_app(app: NotifierApp, mailer: DummyMailer):
