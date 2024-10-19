@@ -26,7 +26,13 @@ class NotifierApp:
         idp: IdpProtocol | None = None,
         mailer: MailerProtocol | None = None,
     ):
-        self.idp = idp if idp else OpenstackIdp(config.openstack.cloud)
+        if idp:
+            self.idp = idp
+        elif config.openstack:
+            self.idp = OpenstackIdp(cloud=config.openstack.cloud)
+        else:
+            self.idp = OpenstackIdp()
+
         self.mailer = (
             mailer
             if mailer

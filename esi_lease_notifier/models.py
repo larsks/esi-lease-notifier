@@ -138,7 +138,7 @@ class ProjectFilter(Filter):
 
 class LeaseNotifierConfiguration(BaseModel):
     email: EmailConfiguration
-    openstack: OpenstackConfiguration
+    openstack: OpenstackConfiguration | None = None
     filters: list[ProjectFilter | ExpiresFilter] = []
     template_path: str | None = None
 
