@@ -7,12 +7,10 @@ from pathlib import Path
 from esi_lease_notifier.app import NotifierApp
 from esi_lease_notifier.idp import IdpProtocol
 from esi_lease_notifier.mailer import MailerProtocol
-from esi_lease_notifier.models import (
-    EmailConfiguration,
-    LeaseNotifierConfiguration,
-    OpenstackConfiguration,
-    User,
-)
+from esi_lease_notifier.models import EmailConfiguration
+from esi_lease_notifier.models import LeaseNotifierConfiguration
+from esi_lease_notifier.models import OpenstackConfiguration
+from esi_lease_notifier.models import User
 from esi_lease_notifier.models import Project
 from esi_lease_notifier.models import Lease
 from esi_lease_notifier.models import RoleAssignment
