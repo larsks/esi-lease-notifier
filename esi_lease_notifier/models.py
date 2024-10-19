@@ -2,6 +2,7 @@ from typing import Self, Literal, Annotated, Protocol, override
 
 import datetime
 
+from pathlib import Path
 from enum import StrEnum
 from enum import IntEnum
 from pydantic import BaseModel, field_validator
@@ -83,6 +84,20 @@ class EmailConfiguration(BaseModel):
     smtp_username: str | None = None
     smtp_password: str | None = None
     smtp_from: str
+
+    @field_validator("smtp_server")
+    @classmethod
+    def validate_smtp_server(cls, val: str) -> str:
+        # when using a unix socket with python's smtplib we need
+        # to provide an absolute path, but we want to be able to
+        # use relative paths in our config. Look for servers
+        # specified as `unix:<path>`, extract that path, and
+        # then compute the absolute path.
+        if val.startswith("unix:"):
+            relpath = val[5:]
+            val = str(Path(relpath).absolute())
+
+        return val
 
     @model_validator(mode="after")
     def set_smtp_tls(self) -> Self:
